@@ -9,12 +9,12 @@ It has been optimized to support GNMI telemetry as produced by SONiC.
 SONiC---Telegraf---InfluxDB
 ```toml
 [[inputs.sonic_telemetry_gnmi]]
-  ## Address and port of the GNMI GRPC server，which should be a SONiC Switch with Telemetry enabled.
-  addresses = ["10.10.39.39:8080"]
+  ## Address and port of the GNMI GRPC server，which should be a SONiC Switch with Telemetry enabled，port is 8080 as default
+  addresses = ["172.20.222.97:8085"]
 
   ## define credentials
-  username = "admin"
-  password = "YourPaSsWoRd"
+  #username = "admin"
+  #password = "YourPaSsWoRd"
 
   ## GNMI encoding requested (one of: "proto", "json", "json_ietf")
   encoding = "json_ietf"
@@ -23,9 +23,9 @@ SONiC---Telegraf---InfluxDB
   redial = "10s"
 
   ## enable client-side TLS and define CA to authenticate the device
-  enable_tls = true
+  #enable_tls = true
   # tls_ca = "/etc/telegraf/ca.pem"
-  insecure_skip_verify = true
+  #insecure_skip_verify = true
 
   ## define client-side TLS certificate & key to authenticate to the device
   # tls_cert = "/etc/telegraf/cert.pem"
@@ -35,6 +35,7 @@ SONiC---Telegraf---InfluxDB
   ## See: https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-specification.md#222-paths
   # origin = ""
   # prefix = ""
+  #target is a database name or "OTHERS"
   target = "COUNTERS_DB"
 
   ## Define additional aliases to map telemetry encoding paths to simple measurement names
@@ -63,47 +64,60 @@ SONiC---Telegraf---InfluxDB
 
     ## If suppression is enabled, send updates at least every X seconds anyway
     # heartbeat_interval = "60s"
- [[outputs.influxdb]]
-    urls = ["http://172.17.0.5:8086"]
-    database = "sonic_telemetry"
-    timeout = "5s"
-    username = "root"
-    password = "root"
+
+[[outputs.influxdb_v2]]
+  ## The URLs of the InfluxDB cluster nodes.
+  ##
+  ## Multiple URLs can be specified for a single cluster, only ONE of the
+  ## urls will be written to each interval.
+  ##   ex: urls = ["https://us-west-2-1.aws.cloud2.influxdata.com"]
+  urls = ["http://10.69.65.19:8086"]
+
+  ## Token for authentication.
+  token = "E6u8WrhRafHZdPQ1JUyQY3C1DQKe37crtlPlE613oq8voyeoRrP3NLy7FGRFt84XEtHIvlRpIxZ4EB-Qns2C7w=="
+
+  ## Organization is the name of the organization you wish to write to; must exist.
+  organization = "lmf-Organization"
+
+  ## Destination bucket to write into.
+  bucket = "test"
+
+  ## The value of this tag will be used to determine the bucket.  If this
+  ## tag is not set the 'bucket' option is used as the default.
+  # bucket_tag = ""
+
+  ## If true, the bucket tag will not be added to the metric.
+  # exclude_bucket_tag = false
+
+  ## Timeout for HTTP messages.
+  # timeout = "5s"
+
+  ## Additional HTTP headers
+  # http_headers = {"X-Special-Header" = "Special-Value"}
+
+  ## HTTP Proxy override, if unset values the standard proxy environment
+  ## variables are consulted to determine which proxy, if any, should be used.
+  # http_proxy = "http://corporate.proxy:3128"
+
+  ## HTTP User-Agent
+  # user_agent = "telegraf"
+
+  ## Content-Encoding for write request body, can be set to "gzip" to
+  ## compress body or "identity" to apply no encoding.
+  # content_encoding = "gzip"
+
+  ## Enable or disable uint support for writing uints influxdb 2.0.
+  # influx_uint_support = false
+
+  ## Optional TLS Config for use on HTTP connections.
+  # tls_ca = "/etc/telegraf/ca.pem"
+  # tls_cert = "/etc/telegraf/cert.pem"
+  # tls_key = "/etc/telegraf/key.pem"
+  ## Use TLS but skip chain & host verification
+  # insecure_skip_verify = false
 ```
 ### Validation
 You should be able to find measurement "ifcounters" in database "sonic_telemetry",which could be treated as Grafana's data source.
 
-# SONiC FRR Input Plugin for BGP Neighbors
-This Input plugin give the following measurements per configured VRF and Address Family
-### Measurements & Fields:
-
-- BGPNeighbors 
-	"ipv4PrefixRecv"
-	"ipv4PrefixSent"
-	"localAs"
-	"localRouterID"
-	"remoteAs"
-	"remoteRouterID"
-	"state"	
-	"totalMsgsRecv"
-	"totalMsgsSent"
-	"uptime"
 
 
-- BGPNbrCount 
-	"totalNbrs"
-	"totalNbrsUp"
-
-### Configuration
-
-```toml
-## Define the VRF and Address Families for the BGP Neighbors from FRR on SONiC OS
-[[inputs.sonic_frr]]
-  #[[inputs.sonic_frr.vrf]]
-  #  name = "default"
-  ## Address Family one of : "ipv4", "ipv6"
-  #  address_family = ["ipv4", "ipv6"]
-  #[[inputs.sonic_frr.vrf]]
-  #  name = "Vrf_blue"
-  #  address_family = ["ipv4", "ipv6"]
-```
